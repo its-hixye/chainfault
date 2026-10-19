@@ -1,0 +1,87 @@
+# Continuous integration for chainfault.
+#
+# NOTE: the gitleaks and trufflehog versions pinned below are the exact
+# releases this project was tested against. Bump them deliberately.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  GITLEAKS_VERSION: "8.26.0"
+  TRUFFLEHOG_VERSION: "3.99.2"
+
+jobs:
+  build:
+    name: Build, vet and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Check gofmt
+        run: |
+          set -euo pipefail
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "The following files are not gofmt-clean:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: |
+          set -euo pipefail
+          go vet ./...
+
+      - name: Install gitleaks
+        run: |
+          set -euo pipefail
+          url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "Downloading ${url}"
+          curl --fail --location --silent --show-error --output /tmp/gitleaks.tar.gz "$url"
+          sudo mkdir -p /usr/local/bin
+          sudo tar -xzf /tmp/gitleaks.tar.gz -C /usr/local/bin gitleaks
+          sudo chmod +x /usr/local/bin/gitleaks
+          gitleaks version
+
+      - name: Install trufflehog
+        run: |
+          set -euo pipefail
+          url="https://github.com/trufflesecurity/trufflehog/releases/download/v${TRUFFLEHOG_VERSION}/trufflehog_${TRUFFLEHOG_VERSION}_linux_amd64.tar.gz"
+          echo "Downloading ${url}"
+          curl --fail --location --silent --show-error --output /tmp/trufflehog.tar.gz "$url"
+          sudo mkdir -p /usr/local/bin
+          sudo tar -xzf /tmp/trufflehog.tar.gz -C /usr/local/bin trufflehog
+          sudo chmod +x /usr/local/bin/trufflehog
+          trufflehog --version
+
+      - name: Run tests
+        run: |
+          set -euo pipefail
+          go test ./... -count=1
+
+      - name: Verify no integration test was skipped
+        run: |
+          set -euo pipefail
+          out=/tmp/integration-test.log
+          if ! go test ./internal/integration/ -v -count=1 >"$out" 2>&1; then
+            echo "::error::integration tests failed"
+            cat "$out"
+            exit 1
+          fi
+          cat "$out"
+          if grep -q -- '--- SKIP' "$out"; then
+            echo "::error::integration tests were skipped; a required tool is likely missing"
+            grep -- '--- SKIP' "$out"
+            exit 1
+          fi

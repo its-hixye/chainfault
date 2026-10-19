@@ -1,0 +1,11 @@
+/chainfault
+/chainfault-bin
+/chainfault-report-*.html
+*.test
+*.out
+coverage.out
+.DS_Store
+*.swp
+.idea/
+.vscode/
+CHAINFAULT_DOC.md

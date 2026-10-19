@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chainfault Security Report</title>
+  <meta name="description" content="Modern secret detection scan report, featuring real-time code audit insights and remediation workflows." />
+  
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #12161C;
+      color: #EEF1F6;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .font-sans {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .font-mono-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    .font-brand {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.25);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.45);
+    }
+
+    /* Expanded Container for Laptops & Desktops */
+    .container {
+      width: 100%;
+      max-width: 1140px;
+      margin-left: auto;
+      margin-right: auto;
+      padding-left: 1.25rem;
+      padding-right: 1.25rem;
+    }
+
+    @media (min-width: 1024px) {
+      .container {
+        padding-left: 2rem;
+        padding-right: 2rem;
+      }
+    }
+
+    /* Header */
+    header {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(18, 22, 28, 0.9);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Pure Solid White Tool Name, System Geometric, No Gradient Colors */
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #FFFFFF;
+      user-select: none;
+      transition: letter-spacing 0.3s ease;
+    }
+
+    .brand-title:hover {
+      letter-spacing: 0.25em;
+    }
+
+    /* Glass Panels */
+    .glass-panel {
+      background: rgba(22, 28, 38, 0.7);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Findings Cards */
+    .finding-card {
+      background: linear-gradient(180deg, #1C2330 0%, #171D27 100%);
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: 14px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s, box-shadow 0.2s, opacity 0.2s;
+      position: relative;
+    }
+
+    .finding-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(200, 164, 93, 0.45);
+      box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 24px -8px rgba(200, 164, 93, 0.22);
+    }
+
+    /* Filter Tabs Sliding Pill */
+    .tabs-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      border-radius: 9999px;
+      background: rgba(22, 28, 38, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(14px);
+    }
+
+    .tab-btn {
+      position: relative;
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #9AA4B5;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s ease;
+      white-space: nowrap;
+      z-index: 1;
+    }
+
+    .tab-btn:hover {
+      color: #EEF1F6;
+    }
+
+    .tab-btn.active {
+      color: #F1DFB4;
+    }
+
+    .tab-indicator {
+      position: absolute;
+      top: 4px;
+      bottom: 4px;
+      border-radius: 9999px;
+      background: rgba(200, 164, 93, 0.18);
+      box-shadow: inset 0 0 0 1px rgba(200, 164, 93, 0.4), 0 0 20px -6px rgba(200, 164, 93, 0.45);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .badge-count {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #6F7A8C;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active .badge-count {
+      background: rgba(200, 164, 93, 0.3);
+      color: #FFFFFF;
+      font-weight: 700;
+    }
+
+    /* Accordion Drawer */
+    .code-drawer {
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transition: max-height 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, margin-top 0.25s ease;
+    }
+
+    .code-drawer.open {
+      max-height: 500px;
+      opacity: 1;
+      margin-top: 12px;
+    }
+
+    /* Utility Helpers */
+    .btn-icon {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #9AA4B5;
+      padding: 4px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s, background 0.15s, transform 0.1s;
+    }
+    .btn-icon:hover {
+      color: #FFFFFF;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .btn-icon:active {
+      transform: scale(0.92);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. Header (Centered Tool Name - Pure Solid White, System Geometric) -->
+  <header>
+    <div class="brand-title font-brand">Chainfault</div>
+  </header>
+
+  <!-- Reveal Warning Banner (rendered only when meta.reveal is true) -->
+  <div id="reveal-warning-banner" style="display: none; background: rgba(242, 85, 90, 0.14); border-bottom: 1px solid rgba(242, 85, 90, 0.32); padding: 8px 16px; font-size: 12px; text-align: center; color: #FECDD3; font-weight: 600; justify-content: center; align-items: center; gap: 8px;" class="font-mono-code">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F2555A" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span>This report contains full secrets. Delete it after use.</span>
+  </div>
+
+  <!-- Report Data Error Banner (rendered only when the injected report data is missing or invalid) -->
+  <div id="report-data-error-banner" style="display: none; background: rgba(242, 85, 90, 0.14); border-bottom: 1px solid rgba(242, 85, 90, 0.32); padding: 8px 16px; font-size: 12px; text-align: center; color: #FECDD3; font-weight: 600; justify-content: center; align-items: center; gap: 8px;" class="font-mono-code">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F2555A" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span>Report data missing or invalid</span>
+  </div>
+
+  <!-- 2. Main Container -->
+  <main class="container" style="flex: 1; padding-top: 1.5rem; padding-bottom: 5rem;">
+
+    <!-- 3. Report Hero (Dynamically Populated from REPORT_DATA.meta) -->
+    <section style="margin-top: 2rem; margin-bottom: 1.5rem;">
+      <div style="display: flex; flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;">
+        <!-- Left: Status, Title, Path & Command -->
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 11px; font-weight: 500;" class="font-mono-code">
+            <span id="hero-status-dot" style="width: 6px; height: 6px; border-radius: 50%; display: inline-block;"></span>
+            <span id="hero-status-text" style="letter-spacing: 0.05em; text-transform: uppercase;"></span>
+            <span style="color: rgba(255, 255, 255, 0.2);">/</span>
+            <span style="color: #9AA4B5;" id="hero-duration"></span>
+          </div>
+
+          <h1 class="font-sans" style="font-size: 2.25rem; font-weight: 800; color: #FFFFFF; letter-spacing: -0.02em;">Scan Report</h1>
+
+          <div style="margin-top: 0.65rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <!-- Path badge -->
+            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); font-size: 12px;" class="font-mono-code">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8A45D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+              <span style="color: #9AA4B5;" id="hero-path"></span>
+              <button class="btn-icon" id="btn-copy-path" title="Copy path">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              </button>
+            </div>
+
+            <!-- CLI Command -->
+            <button id="btn-copy-cli" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); font-size: 11px; color: #9AA4B5; cursor: pointer; transition: all 0.15s;" class="font-mono-code" title="Copy CLI scan command">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C8A45D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>
+              <span id="hero-command-label"></span>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Compact, Eye-Comforting Metadata -->
+        <div style="font-size: 12px; display: flex; flex-direction: column; gap: 8px; text-align: right;" class="font-mono-code">
+          <!-- Timestamp -->
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; color: #EEF1F6;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8A45D" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span style="font-weight: 500;" id="hero-date"></span>
+          </div>
+
+          <!-- Commits Scanned (replaces files) & Commit Hash/Branch -->
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; font-size: 11px; color: #6F7A8C;">
+            <span style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4FBF8B" stroke-width="2"><circle cx="12" cy="12" r="3"/><line x1="3" x2="9" y1="12" y2="12"/><line x1="15" x2="21" y1="12" y2="12"/></svg>
+              <strong style="color: #EEF1F6; font-weight: 500;" id="hero-commits"></strong> commits
+            </span>
+            <span style="color: rgba(255, 255, 255, 0.2);">·</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C8A45D" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <strong style="color: #EEF1F6; font-weight: 500;" id="hero-files"></strong> files
+            </span>
+            <span style="color: rgba(255, 255, 255, 0.2);">·</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2"><circle cx="12" cy="12" r="3"/><line x1="3" x2="9" y1="12" y2="12"/><line x1="15" x2="21" y1="12" y2="12"/></svg>
+              <span style="color: #C8A45D; font-weight: 500;" id="hero-commit-hash"></span>
+              <span id="hero-branch"></span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Filter Bar (5 Circular Tabs with dynamic counts + Compact Search) -->
+    <section id="filter-section" style="margin-top: 1.75rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+      <div class="tabs-wrapper" id="tabs-group" role="tablist">
+        <!-- Floating active indicator -->
+        <div class="tab-indicator" id="tab-indicator"></div>
+
+        <button class="tab-btn active" data-filter="all" role="tab">
+          <span>All</span>
+          <span class="badge-count font-mono-code" id="count-all">0</span>
+        </button>
+        <button class="tab-btn" data-filter="critical" role="tab">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background: #F2555A;"></span>
+          <span>Critical</span>
+          <span class="badge-count font-mono-code" id="count-critical">0</span>
+        </button>
+        <button class="tab-btn" data-filter="high" role="tab">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background: #F0883E;"></span>
+          <span>High</span>
+          <span class="badge-count font-mono-code" id="count-high">0</span>
+        </button>
+        <button class="tab-btn" data-filter="medium" role="tab">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background: #EBCB4B;"></span>
+          <span>Medium</span>
+          <span class="badge-count font-mono-code" id="count-medium">0</span>
+        </button>
+        <button class="tab-btn" data-filter="low" role="tab">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background: #4FBF8B;"></span>
+          <span>Low</span>
+          <span class="badge-count font-mono-code" id="count-low">0</span>
+        </button>
+      </div>
+
+      <!-- Compact Search Box (title, location, and secret type only) -->
+      <div style="position: relative; width: 176px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6F7A8C" stroke-width="2" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+        <input 
+          type="text" 
+          id="search-input" 
+          placeholder="Filter..." 
+          class="font-mono-code"
+          style="width: 100%; background: rgba(18, 22, 28, 0.9); font-size: 12px; color: #EEF1F6; padding: 6px 26px 6px 32px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.09); outline: none; transition: border-color 0.2s;"
+        />
+        <button id="search-clear" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #6F7A8C; display: none; padding: 2px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- 5. Findings List Container -->
+    <section id="findings-container" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.875rem;">
+      <!-- Populated via JavaScript dynamically -->
+    </section>
+
+    <!-- Failed Tools Alert Section (rendered only if any tool failed) -->
+    <section id="failed-tools-section" style="display: none; margin-top: 2rem;">
+      <!-- Populated via JavaScript dynamically -->
+    </section>
+
+    <!-- 6. Centered Minimalist Footer -->
+    <footer style="margin-top: 4rem; padding-top: 2rem; padding-bottom: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: center;">
+      <a 
+        href="https://github.com/its-hixye" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 9999px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.09); text-decoration: none; color: #9AA4B5; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"
+        class="font-mono-code"
+        id="footer-github-link"
+        title="GitHub: its-hixye"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+        <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.02em; color: rgba(255,255,255,0.85);">@its-hixye</span>
+      </a>
+    </footer>
+  </main>
+
+
+
+  <!-- Server-injected report data (pre-marshaled JSON; see CHAINFAULT_DOC.md §15) -->
+  <script type="application/json" id="injected-report-data">{{ .ReportData }}</script>
+
+  <!-- JavaScript Engine & Security Core -->
+  <script>
+    /*
+     * =========================================================================
+     * REPORT_DATA — ONE MERGED JSON (both scanners, unified field names)
+     * =========================================================================
+     * The two scanners are normalized into ONE list of findings. A secret
+     * is never listed twice: when both scanners find it, it becomes a single
+     * object whose `foundBy` lists both. Raw tool field names are never shown —
+     * `typeLabel` comes from the naming table in CHAINFAULT_DOC.md §10.
+     *
+     * Field sources after the merge:
+     *   entropy    → entropy                              (Shannon entropy, float; data only — not displayed)
+     *   history    → RuleID / File / StartLine / Commit / Author / Date
+     *   decoding   → verified                             (Verified; --verify only)
+     *   decoding   → Raw / SourceMetadata                 (secret value, commit, author)
+     *   chainfault → id, typeLabel, location, severity, score, maskedSecret,
+     *                secretKeyName, historyOnly, isTestFile, seenInCommits,
+     *                codeSnippet   (title is computed by this renderer: typeLabel + " in " + location)
+     *   merged     → foundBy, commit, seenInCommits
+     *
+     * Designed for static HTML generation (e.g., populated by a Go CLI binary).
+     * 
+     * @property {Object} meta - Global audit metadata
+     *   @property {string}  meta.projectName    - Name of scanned repository
+     *   @property {string}  meta.projectPath    - Filesystem path or repository URL
+     *   @property {string}  meta.scanDate       - Formatted timestamp
+     *   @property {string}  meta.scanDuration   - Elapsed scan duration (e.g., "3.8s")
+     *   @property {string}  meta.scanCommand    - Terminal command used for scan
+     *   @property {number}  meta.commitsScanned - Number of git commits analyzed
+     *   @property {string}  meta.commitHash     - Short SHA of HEAD
+     *   @property {string}  meta.branch         - Git branch name
+     *   @property {boolean} meta.reveal         - If true, full secrets & reveal toggles enabled
+     * 
+     * @property {Array<{name: string, ok: boolean, reason?: string}>} toolStatus
+     *   Execution status of the scanners (names appear only in the Failed Scanner Tools block)
+     * 
+     * @property {Array<Finding>} findings - Sorted list of secret findings
+     *   @property {string}   id              - Unique finding identifier
+     *   @property {string}   typeLabel       - Secret category (e.g., "AWS key")
+     *   @property {string}   location        - File path & line (e.g., "src/config/db.py:14")
+     *   @property {string}   severity        - "critical" | "high" | "medium" | "low"
+     *   @property {number}   score           - Risk priority score (integer, 1 - 10)
+     *   @property {string}   secretKeyName   - Variable or config name (optional; empty when unknown)
+     *   @property {string}   maskedSecret    - Safe obfuscated representation
+     *   @property {string}   [rawSecret]     - Plaintext secret (ONLY populated when meta.reveal = true)
+     *   @property {number}   [entropy]       - Shannon entropy of the secret (data only — not displayed)
+     *   @property {boolean}  [verified]      - True if the decoding scanner live-verified it (--verify only; badge reads "Verified live")
+     *   @property {string[]} foundBy         - Scanner names (data only — not displayed)
+     *   @property {number}   [seenInCommits] - Commits containing secret (if > 1)
+     *   @property {boolean}  [historyOnly]   - True if deleted from HEAD but in history
+     *   @property {Object}   [commit]        - { hash, date, author } (author name only)
+     *   @property {boolean}  [isTestFile]    - True if located in mock or test fixture
+     *   @property {Object}   codeSnippet     - Context lines (3 before, 1 target, 3 after)
+     * =========================================================================
+     */
+
+    // Production data source: the JSON injected by internal/reporter at the
+    // single injection point (#injected-report-data). There is no fallback data
+    // set — a report that carries no usable data says so instead of showing
+    // fabricated findings.
+    let reportDataError = false;
+
+    const REPORT_DATA = (() => {
+      const el = document.getElementById('injected-report-data');
+      const raw = el ? el.textContent.trim() : '';
+
+      // No usable data: render the error banner and zero findings.
+      const fail = () => {
+        reportDataError = true;
+        return { meta: { commitsScanned: 0 }, toolStatus: [], findings: [] };
+      };
+
+      if (!raw) return fail();
+
+      try {
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.findings)) return fail();
+        parsed.meta = parsed.meta || {};
+        parsed.toolStatus = parsed.toolStatus || [];
+        return parsed;
+      } catch (e) {
+        return fail();
+      }
+    })();
+
+    // Sort findings descending by score (highest risk first)
+    REPORT_DATA.findings.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    // Compute title for each finding dynamically: typeLabel + " in " + location
+    REPORT_DATA.findings.forEach(f => {
+      f.title = `${f.typeLabel} in ${f.location}`;
+    });
+
+    // Sanitize IDs once at load — they are written raw into id/data-* attributes
+    REPORT_DATA.findings.forEach(f => {
+      f.id = String(f.id || '').replace(/[^A-Za-z0-9_-]/g, '');
+    });
+
+    /*
+     * =========================================================================
+     * Security Sanitization Helpers
+     * =========================================================================
+     */
+
+    // Replaces control characters (such as ESC \x1b, null \x00, etc.) with visible text representations
+    function sanitizeDisplay(val) {
+      if (val === null || val === undefined) return '';
+      return String(val).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, char => {
+        const hex = char.charCodeAt(0).toString(16).padStart(2, '0');
+        return `\\x${hex}`;
+      });
+    }
+
+    // Escapes special HTML characters to prevent XSS injection
+    function escapeHtml(val) {
+      if (val === null || val === undefined) return '';
+      return String(val)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Unified safe formatter for all dynamic values written to DOM
+    function safe(val) {
+      return escapeHtml(sanitizeDisplay(val));
+    }
+
+    /*
+     * =========================================================================
+     * Application State
+     * =========================================================================
+     */
+    let currentFilter = 'all';
+    let searchQuery = '';
+    const cardSecretReveals = {};
+
+    const severityStyles = {
+      critical: { color: '#F2555A', bg: 'rgba(242, 85, 90, 0.15)', dot: '#F2555A' },
+      high: { color: '#F0883E', bg: 'rgba(240, 136, 62, 0.15)', dot: '#F0883E' },
+      medium: { color: '#EBCB4B', bg: 'rgba(235, 203, 75, 0.15)', dot: '#EBCB4B' },
+      low: { color: '#4FBF8B', bg: 'rgba(79, 191, 139, 0.15)', dot: '#4FBF8B' }
+    };
+
+    /*
+     * =========================================================================
+     * UI Render Engine
+     * =========================================================================
+     */
+
+    function renderHeaderAndHero() {
+      const meta = REPORT_DATA.meta;
+      const tools = REPORT_DATA.toolStatus || [];
+      const hasToolFailure = tools.some(t => !t.ok);
+
+      // Warning banner if reveal is enabled
+      const revealBanner = document.getElementById('reveal-warning-banner');
+      if (meta.reveal) {
+        revealBanner.style.display = 'flex';
+      } else {
+        revealBanner.style.display = 'none';
+      }
+
+      // Hero Status
+      const statusDot = document.getElementById('hero-status-dot');
+      const statusText = document.getElementById('hero-status-text');
+      if (hasToolFailure) {
+        statusDot.style.background = '#F0883E';
+        statusText.style.color = '#F0883E';
+        statusText.innerText = 'Scan incomplete';
+      } else {
+        statusDot.style.background = '#C8A45D';
+        statusText.style.color = '#C8A45D';
+        statusText.innerText = 'Scan complete';
+      }
+
+      // Everything below is written as TEXT (innerText / textContent), never as
+      // markup. safe() escapes HTML entities, and innerText renders those
+      // entities literally ("&amp;" instead of "&"), so HTML escaping must NOT
+      // be applied here — CHAINFAULT_DOC.md §15: only innerHTML assignments are
+      // sanitized with safe(). sanitizeDisplay is kept because it still turns
+      // control characters (\x1b, \x00, ...) into visible text.
+      document.getElementById('hero-duration').innerText = sanitizeDisplay(meta.scanDuration);
+      document.getElementById('hero-path').innerText = sanitizeDisplay(meta.projectPath);
+      document.getElementById('hero-date').innerText = sanitizeDisplay(meta.scanDate);
+      document.getElementById('hero-commits').innerText = meta.commitsScanned.toLocaleString();
+      document.getElementById('hero-commit-hash').innerText = sanitizeDisplay(meta.commitHash);
+      document.getElementById('hero-branch').innerText = `(${sanitizeDisplay(meta.branch)})`;
+
+      // Files count: unique file paths across ALL findings, derived from
+      // `location` ("path:line") by stripping only a trailing ":<digits>".
+      // Counted here so the hero matches the terminal's "across M files"; no
+      // extra field is added to REPORT_DATA (the JSON contract is unchanged).
+      const fileCount = new Set(
+        (REPORT_DATA.findings || [])
+          .map(f => String(f.location || '').replace(/:\d+$/, ''))
+          .filter(Boolean)
+      ).size;
+      const filesEl = document.getElementById('hero-files');
+      if (filesEl) filesEl.innerText = fileCount.toLocaleString();
+
+      // Page title: plain text assignment, never innerHTML — the project name
+      // is repository-controlled. Falls back to the static <title>.
+      const reportTitleFallback = 'Chainfault Security Report';
+      const projectName = sanitizeDisplay(meta.projectName).trim();
+      document.title = projectName
+        ? `${projectName} · ${reportTitleFallback}`
+        : reportTitleFallback;
+
+      // Scan-command label: same plain-text rule, so the button can never carry
+      // injected markup. Falls back to the bare command when metadata is absent.
+      const commandLabel = sanitizeDisplay(meta.scanCommand).trim();
+      const commandEl = document.getElementById('hero-command-label');
+      if (commandEl) commandEl.textContent = commandLabel || 'chainfault scan';
+    }
+
+    function updatePillCounts() {
+      const findings = REPORT_DATA.findings;
+      const counts = {
+        all: findings.length,
+        critical: findings.filter(f => f.severity === 'critical').length,
+        high: findings.filter(f => f.severity === 'high').length,
+        medium: findings.filter(f => f.severity === 'medium').length,
+        low: findings.filter(f => f.severity === 'low').length,
+      };
+
+      document.getElementById('count-all').innerText = counts.all;
+      document.getElementById('count-critical').innerText = counts.critical;
+      document.getElementById('count-high').innerText = counts.high;
+      document.getElementById('count-medium').innerText = counts.medium;
+      document.getElementById('count-low').innerText = counts.low;
+    }
+
+    function renderFailedTools() {
+      const failed = (REPORT_DATA.toolStatus || []).filter(t => !t.ok);
+      const container = document.getElementById('failed-tools-section');
+      if (failed.length === 0) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+      }
+
+      container.style.display = 'block';
+      container.innerHTML = `
+        <div style="padding: 1.25rem 1.5rem; border-radius: 12px; background: rgba(242, 85, 90, 0.08); border: 1px solid rgba(242, 85, 90, 0.25);">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #F2555A;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>Failed Scanner Tools</span>
+          </div>
+          <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 12px;" class="font-mono-code">
+            ${failed.map(t => `
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; border-radius: 6px; background: rgba(0,0,0,0.35); border: 1px solid rgba(242,85,90,0.15); flex-wrap: wrap; gap: 6px;">
+                <span style="font-weight: 600; color: #FECDD3;">${safe(t.name)}</span>
+                <span style="color: #F87171;">${safe(t.reason || 'Process exited with error')}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderFindings() {
+      const container = document.getElementById('findings-container');
+      const allFindings = REPORT_DATA.findings;
+      const hasToolFailure = (REPORT_DATA.toolStatus || []).some(t => !t.ok);
+      const canReveal = REPORT_DATA.meta.reveal;
+
+      // Special Case 1: All tools succeeded and zero findings -> Repository is clean
+      if (allFindings.length === 0 && !hasToolFailure) {
+        container.innerHTML = `
+          <div class="glass-panel" style="padding: 3rem 2rem; text-align: center; border-radius: 12px;">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#4FBF8B" stroke-width="2" style="margin: 0 auto 12px; opacity: 0.85;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            <div style="font-size: 1.15rem; font-weight: 700; color: #FFFFFF; letter-spacing: -0.01em;">Repository is clean, no issues found</div>
+            <p style="font-size: 13px; color: #9AA4B5; margin-top: 6px; max-width: 420px; margin-left: auto; margin-right: auto;">All security scanners executed successfully and detected no leaked credentials or secret keys.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Special Case 2: Zero findings, but at least one tool failed -> Scan incomplete (NEVER show clean!)
+      if (allFindings.length === 0 && hasToolFailure) {
+        container.innerHTML = `
+          <div class="glass-panel" style="padding: 3rem 2rem; text-align: center; border-radius: 12px; border-color: rgba(240, 136, 62, 0.3);">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#F0883E" stroke-width="2" style="margin: 0 auto 12px; opacity: 0.9;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div style="font-size: 1.15rem; font-weight: 700; color: #FFFFFF; letter-spacing: -0.01em;">Scan incomplete</div>
+            <p style="font-size: 13px; color: #9AA4B5; margin-top: 6px; max-width: 480px; margin-left: auto; margin-right: auto;">One or more scanner tools encountered errors during execution. The repository cannot be certified clean.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Filter & Search (search matches title, location, and secret typeLabel ONLY)
+      const filtered = allFindings.filter(item => {
+        if (currentFilter !== 'all' && item.severity !== currentFilter) return false;
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          const matchTitle = item.title.toLowerCase().includes(q);
+          const matchLocation = item.location.toLowerCase().includes(q);
+          const matchType = item.typeLabel.toLowerCase().includes(q);
+          if (!matchTitle && !matchLocation && !matchType) return false;
+        }
+        return true;
+      });
+
+      // Special Case 3: Search or filter matches 0 items
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="glass-panel" style="padding: 2.5rem; text-align: center; border-radius: 12px;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#4FBF8B" stroke-width="2" style="margin: 0 auto; opacity: 0.7;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            <div style="font-size: 1rem; font-weight: 600; color: #FFFFFF; margin-top: 12px;">No findings matched your criteria</div>
+            <p style="font-size: 12px; color: #9AA4B5; margin-top: 4px;">Try clearing your active filters or search terms.</p>
+            <button data-action="reset-filters" style="margin-top: 12px; padding: 6px 14px; border-radius: 8px; background: rgba(255,255,255,0.06); border: none; font-size: 12px; color: #C8A45D; cursor: pointer;" class="font-mono-code">Reset All Filters</button>
+          </div>
+        `;
+        return;
+      }
+
+      // Render cards
+      container.innerHTML = filtered.map(finding => {
+        const sev = severityStyles[finding.severity] || severityStyles.low;
+        const isRevealed = cardSecretReveals[finding.id] || false;
+        const secretVal = isRevealed ? (finding.rawSecret || finding.maskedSecret) : finding.maskedSecret;
+        const secretLabel = finding.secretKeyName ? `${safe(finding.secretKeyName)} = ` : '';
+
+        return `
+          <article class="finding-card" id="card-${finding.id}" data-finding-id="${finding.id}">
+            <!-- Card Header -->
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+              <div style="display: flex; flex-direction: column; gap: 4px; max-width: 80%;">
+                <!-- Editorial Title -->
+                <h2 class="font-sans" style="font-size: 17.5px; font-weight: 600; color: #FFFFFF; letter-spacing: -0.01em; line-height: 1.35;">${safe(finding.title)}</h2>
+                
+                <!-- Meta line: Type tag, History/Test badges, Score badge, and File location -->
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; margin-top: 2px;">
+                  <!-- History Only Badge -->
+                  ${finding.historyOnly ? `
+                    <span class="font-mono-code" style="padding: 2px 7px; border-radius: 5px; background: rgba(168, 85, 247, 0.15); color: #D8B4FE; border: 1px solid rgba(168, 85, 247, 0.3); font-size: 11px; font-weight: 500;">history only</span>
+                  ` : ''}
+
+                  <!-- Test File Badge -->
+                  ${finding.isTestFile ? `
+                    <span class="font-mono-code" style="padding: 2px 7px; border-radius: 5px; background: rgba(59, 130, 246, 0.15); color: #93C5FD; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 11px; font-weight: 500;">test file</span>
+                  ` : ''}
+
+                  <!-- Verified Badge (only with --verify) -->
+                  ${finding.verified ? `
+                    <span class="font-mono-code" style="padding: 2px 7px; border-radius: 5px; background: rgba(79, 191, 139, 0.15); color: #6EE7B7; border: 1px solid rgba(79, 191, 139, 0.3); font-size: 11px; font-weight: 500;">Verified live</span>
+                  ` : ''}
+
+                  <!-- Code Location Chip -->
+                  <span class="font-mono-code" style="color: #EEF1F6; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 2px 7px; border-radius: 5px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                    <span>${safe(finding.location)}</span>
+                    <button class="btn-icon" data-action="copy-location" data-id="${finding.id}" title="Copy location">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                    </button>
+                  </span>
+
+                  <!-- Score Badge (1-10) replacing old CVSS -->
+                  <span class="font-mono-code" style="color: #C8A45D; font-size: 11px; font-weight: 500; padding: 2px 7px; border-radius: 4px; background: rgba(200,164,93,0.1); border: 1px solid rgba(200,164,93,0.2);">Score ${safe(finding.score)}</span>
+                </div>
+              </div>
+
+              <!-- Severity Badge -->
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 9999px; color: ${sev.color}; background: ${sev.bg}; border: 1px solid rgba(255,255,255,0.08);">
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: ${sev.dot};"></span>
+                  <span style="text-transform: capitalize;">${safe(finding.severity)}</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Card Details Grid -->
+            <div style="margin-top: 1rem; padding-top: 0.875rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 10px;">
+              <!-- Secret Row with Eye Toggle & Copy -->
+              <div style="display: grid; grid-template-columns: 68px 1fr; gap: 10px; align-items: flex-start;">
+                <span class="font-mono-code" style="font-size: 10.5px; color: #6F7A8C; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding-top: 4px;">Secret</span>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #0E121A; padding: 7px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.07);" class="font-mono-code">
+                  <span style="font-size: 12px; color: #EEF1F6; word-break: break-all;">${secretLabel}${safe(secretVal)}</span>
+                  <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                    <!-- Eye Icon (Reveal / Mask) — only rendered when the raw secret is available -->
+                    ${canReveal ? `
+                    <button class="btn-icon" data-action="toggle-card-secret" data-id="${finding.id}" title="${isRevealed ? 'Mask secret' : 'Reveal secret'}" style="color: ${isRevealed ? '#F43F5E' : '#9AA4B5'};">
+                      ${isRevealed ? `
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                          <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                          <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                          <line x1="2" x2="22" y1="2" y2="22"/>
+                        </svg>
+                      ` : `
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      `}
+                    </button>
+                    ` : ''}
+                    <!-- Copy Secret -->
+                    <button class="btn-icon" data-action="copy-secret" data-id="${finding.id}" title="Copy secret">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+
+              <!-- Commit Row (Shown only if historyOnly) -->
+              ${finding.historyOnly && finding.commit ? `
+                <div style="display: grid; grid-template-columns: 68px 1fr; gap: 10px; align-items: flex-start;">
+                  <span class="font-mono-code" style="font-size: 10.5px; color: #6F7A8C; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding-top: 2px;">Commit</span>
+                  <div class="font-mono-code" style="font-size: 12px; color: #D8B4FE;">
+                    <span>${safe(finding.commit.hash)}</span>
+                    <span style="color: rgba(255,255,255,0.2);">·</span>
+                    <span style="color: #9AA4B5;">${safe(finding.commit.date)}</span>
+                    <span style="color: rgba(255,255,255,0.2);">·</span>
+                    <span style="color: #EEF1F6; font-weight: 500;">${safe(finding.commit.author)}</span>
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- Seen In Commits Row (Shown only if seenInCommits > 1) -->
+              ${finding.seenInCommits && finding.seenInCommits > 1 ? `
+                <div style="display: grid; grid-template-columns: 68px 1fr; gap: 10px; align-items: flex-start;">
+                  <span class="font-mono-code" style="font-size: 10.5px; color: #6F7A8C; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding-top: 2px;">Seen in</span>
+                  <div class="font-mono-code" style="font-size: 12px; color: #C8A45D;">
+                    ${finding.seenInCommits} commits
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Accordion Toggle -->
+            <div style="margin-top: 0.875rem; padding-top: 0.65rem; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; font-size: 12px;">
+              <button data-action="toggle-code" data-id="${finding.id}" style="background: none; border: none; display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: #9AA4B5; cursor: pointer; transition: color 0.15s;" class="font-mono-code" onmouseover="this.style.color='#C8A45D'" onmouseout="this.style.color='#9AA4B5'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                <span id="code-btn-text-${finding.id}">View code context</span>
+                <svg id="chevron-${finding.id}" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.25s;"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+            </div>
+
+            <!-- Code Drawer -->
+            <div class="code-drawer" id="drawer-${finding.id}">
+              <div style="border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.09); background: #0c0f14; font-size: 11.5px;" class="font-mono-code">
+                <div style="padding: 6px 12px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; font-size: 11px; color: #6F7A8C;">
+                  <span>${safe(finding.location)} ${finding.historyOnly && finding.commit ? `· commit ${safe(finding.commit.hash)}` : ''}</span>
+                  <span>${safe(finding.codeSnippet.language)}</span>
+                </div>
+                <div style="padding: 10px; overflow-x: auto; display: flex; flex-direction: column; gap: 2px;">
+                  ${finding.codeSnippet.lines.map(line => `
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 2px 6px; border-radius: 4px; ${line.isHighlighted ? 'background: rgba(242, 85, 90, 0.15); color: #FECDD3; border-left: 2px solid #F2555A;' : 'color: #9AA4B5;'}">
+                      <span style="width: 24px; text-align: right; color: #6F7A8C; font-size: 11px; user-select: none;">${line.number}</span>
+                      <span style="white-space: pre;">${safe((REPORT_DATA.meta.reveal && isRevealed && finding.rawSecret && line.codeRaw) ? line.codeRaw : line.code)}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    /*
+     * =========================================================================
+     * Filter & Tabs Handling
+     * =========================================================================
+     */
+    function positionIndicator(buttonElement) {
+      const indicator = document.getElementById('tab-indicator');
+      if (!buttonElement || !indicator) return;
+      indicator.style.left = `${buttonElement.offsetLeft}px`;
+      indicator.style.width = `${buttonElement.offsetWidth}px`;
+    }
+
+    function setFilter(filter, buttonElement) {
+      currentFilter = filter;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      buttonElement.classList.add('active');
+      positionIndicator(buttonElement);
+      renderFindings();
+    }
+
+    function handleSearch(val) {
+      searchQuery = val;
+      const clearBtn = document.getElementById('search-clear');
+      clearBtn.style.display = val ? 'block' : 'none';
+      renderFindings();
+    }
+
+    function clearSearch() {
+      const input = document.getElementById('search-input');
+      input.value = '';
+      searchQuery = '';
+      document.getElementById('search-clear').style.display = 'none';
+      renderFindings();
+    }
+
+    function resetFilters() {
+      clearSearch();
+      const allBtn = document.querySelector('.tab-btn[data-filter="all"]');
+      if (allBtn) setFilter('all', allBtn);
+    }
+
+    /*
+     * =========================================================================
+     * Accordion & Secret Toggling
+     * =========================================================================
+     */
+    function toggleCode(id) {
+      const drawer = document.getElementById(`drawer-${id}`);
+      const chevron = document.getElementById(`chevron-${id}`);
+      const btnText = document.getElementById(`code-btn-text-${id}`);
+      if (!drawer) return;
+      const isOpen = drawer.classList.contains('open');
+
+      if (isOpen) {
+        drawer.classList.remove('open');
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
+        if (btnText) btnText.innerText = 'View code context';
+      } else {
+        drawer.classList.add('open');
+        if (chevron) chevron.style.transform = 'rotate(180deg)';
+        if (btnText) btnText.innerText = 'Hide code snippet';
+      }
+    }
+
+    function toggleCardSecret(id) {
+      cardSecretReveals[id] = !cardSecretReveals[id];
+      renderFindings();
+    }
+
+    /*
+     * =========================================================================
+     * Secure Clipboard Copy Function
+     * =========================================================================
+     */
+    async function copyText(text, btnElement) {
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+
+      if (btnElement) {
+        const originalHTML = btnElement.innerHTML;
+        btnElement.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4FBF8B" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`;
+        setTimeout(() => {
+          btnElement.innerHTML = originalHTML;
+        }, 1800);
+      }
+    }
+
+    /*
+     * =========================================================================
+     * Event Listeners & Delegation (Zero Inline Strings)
+     * =========================================================================
+     */
+
+    // Findings container event delegation
+    document.getElementById('findings-container').addEventListener('click', (e) => {
+      const target = e.target.closest('[data-action]');
+      if (!target) return;
+
+      const action = target.getAttribute('data-action');
+      const id = target.getAttribute('data-id');
+      const finding = REPORT_DATA.findings.find(f => f.id === id);
+
+      if (action === 'toggle-code' && id) {
+        toggleCode(id);
+      } else if (action === 'toggle-card-secret' && id) {
+        toggleCardSecret(id);
+      } else if (action === 'copy-location' && finding) {
+        copyText(finding.location, target);
+      } else if (action === 'copy-secret' && finding) {
+        const isRevealed = cardSecretReveals[id] || false;
+        const val = isRevealed ? (finding.rawSecret || finding.maskedSecret) : finding.maskedSecret;
+        copyText(val, target);
+      } else if (action === 'reset-filters') {
+        resetFilters();
+      }
+    });
+
+    // Tab buttons event listener
+    document.getElementById('tabs-group').addEventListener('click', (e) => {
+      const btn = e.target.closest('.tab-btn');
+      if (!btn) return;
+      const filter = btn.getAttribute('data-filter');
+      setFilter(filter, btn);
+    });
+
+    // Search events
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      handleSearch(e.target.value);
+    });
+    document.getElementById('search-clear').addEventListener('click', clearSearch);
+
+    // Hero copy buttons
+    document.getElementById('btn-copy-path').addEventListener('click', function() {
+      copyText(REPORT_DATA.meta.projectPath, this);
+    });
+    document.getElementById('btn-copy-cli').addEventListener('click', function() {
+      copyText(REPORT_DATA.meta.scanCommand, this);
+    });
+
+    /*
+     * =========================================================================
+     * Initial Boot Sequence
+     * =========================================================================
+     */
+    window.addEventListener('DOMContentLoaded', () => {
+      // Missing or unparseable injected data: show the error banner and render
+      // no findings at all — never a "repository is clean" claim.
+      if (reportDataError) {
+        document.getElementById('report-data-error-banner').style.display = 'flex';
+        document.getElementById('findings-container').innerHTML = '';
+        document.getElementById('failed-tools-section').style.display = 'none';
+        document.getElementById('failed-tools-section').innerHTML = '';
+        return;
+      }
+
+      renderHeaderAndHero();
+      updatePillCounts();
+      renderFailedTools();
+      renderFindings();
+
+      const firstTab = document.querySelector('.tab-btn.active') || document.querySelector('.tab-btn');
+      if (firstTab) positionIndicator(firstTab);
+    });
+
+    window.addEventListener('resize', () => {
+      const activeTab = document.querySelector('.tab-btn.active');
+      if (activeTab) positionIndicator(activeTab);
+    });
+  </script>
+</body>
+</html>
